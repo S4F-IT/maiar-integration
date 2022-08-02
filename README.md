@@ -16,12 +16,14 @@ We observed that we can use most of the `WalletConnectProvider` located [here](h
 ```ts
 import WalletClient from "@walletconnect/client";
 
+const const bridgeUrl = "https://bridge.walletconnect.org";
+
 const walletConnector = new WalletClient({
-  bridge: this.walletConnectBridge,
+  bridge: bridgeUrl,
   clientMeta: {
     description: "Connect with <your_app>",
-    url: "your.app.website",
-    icons: ["icon.url"],
+    url: "<your.app.website>",
+    icons: ["<your_app_icon.url>"],
     name: "<your_app_name>",
   },
 });
