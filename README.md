@@ -16,7 +16,7 @@ We observed that we can use most of the `WalletConnectProvider` located [here](h
 ```ts
 import WalletClient from "@walletconnect/client";
 
-this.walletConnector = new WalletClient({
+const walletConnector = new WalletClient({
   bridge: this.walletConnectBridge,
   clientMeta: {
     description: "Connect with <your_app>",
@@ -30,6 +30,119 @@ this.walletConnector = new WalletClient({
 On the browser, using the `dapp-core` example, this information was inferred already, but on the native side, we had to explicitly provide this information.
 
 Considering the time constraint, we simply copied that version locally and made small tweaks to the original code.
+
+---
+
+Below are more detailed information about the `WalletConnectProvider` and how to work with it.
+
+```ts
+// Listenting to event provided by the wallet connector
+walletConnector.on("connect", onConnect);
+walletConnector.on("session_update", onDisconnect);
+walletConnector.on("disconnect", onDisconnect);
+
+/**
+ * Callback invoked when the client connects.
+ */
+private onConnect = async (error: any, { params }: any) => {
+  if (error) {
+    throw error;
+  }
+  
+  if (!params || !params[0]) {
+    throw new Error("missing payload");
+  }
+  
+  const { accounts: [account] } = params[0];
+  const [address, signature] = account.split(".");
+  
+  // Do something with the address and the signature of the account...
+}
+```
+
+How to login an account?
+
+```ts
+const WALLETCONNECT_ELROND_CHAIN_ID = 508;
+
+/**
+ * Returns a wc uri which can be scanned using the Maiar application in order to login.
+ */
+async login(): Promise<string> {
+  // Check if the wallet connected was already initialized
+  if (!this.walletConnector) {
+    // You may have your own logic that you need to do in order to initialize the WalletConnectProvider,
+    // otherwise you can use the default function provided by Elrond.
+    await this.init();
+  }
+
+  if (this.walletConnector?.connected) {
+    await this.walletConnector.killSession();
+    return "";
+  }
+
+  await this.walletConnector?.createSession({
+    chainId: WALLETCONNECT_ELROND_CHAIN_ID,
+  });
+  
+  return this.walletConnector?.uri || "";
+}
+```
+
+In order to logout, you can simply call the `walletConnector.killSession()` function.
+
+---
+
+How to sign a transaction using the `walletConnector`?
+
+```ts
+/**
+ * Signs a transaction and returns it
+ * @param transaction
+ */
+async signTransaction<T extends ITransaction>(transaction: T): Promise<T> {
+  if (!this.walletConnector) {
+    throw new Error("Wallet Connect not initialised, call init() first");
+  }
+
+  // Obtain the user's address.
+  const address = await this.getAddress();
+  
+  // Create a message from the given transaction.
+  const message = this.prepareWalletConnectMessage(transaction, address);
+  
+  // Obtain the signature
+  const sig = await this.walletConnector.sendCustomRequest({
+    method: "erd_sign",
+    params: message,
+  });
+  
+  if (!sig || !sig.signature) {
+    throw new Error("Wallet Connect could not sign the transaction");
+  }
+  
+  transaction.applySignature(Signature.fromHex(sig.signature), UserAddress.fromBech32(address));
+  
+  return transaction;
+}
+
+/**
+ * Returns a transaction in the format understood by the Elrond blockchain.
+ */
+function prepareWalletConnectMessage(transaction: ITransaction, address: string) {
+  return {
+    nonce: transaction.getNonce().valueOf(),
+    from: address,
+    to: transaction.getReceiver().toString(),
+    amount: transaction.getValue().toString(),
+    gasPrice: transaction.getGasPrice().valueOf().toString(),
+    gasLimit: transaction.getGasLimit().valueOf().toString(),
+    data: Buffer.from((transaction as Transaction).getData().valueOf()).toString(),
+    chainId: transaction.getChainID().valueOf(),
+    version: transaction.getVersion().valueOf(),
+  };
+}
+```
 
 ### A complete example of login flow can be seen here
 
@@ -63,7 +176,7 @@ const onLogin = async () => {
   await walletConnectProvider.init();
   // The connectorUri can be represented as a qr code and this is what you
   // usually see what you try to login with Maiar on different web applications.
-  let connectorUri = await walletConnectProvider.login();
+  const connectorUri = await walletConnectProvider.login();
 
   // The schema url represents the deep linking url needed by the Maiar app
   // in order to let the user log in.
@@ -92,8 +205,6 @@ Below are some example of queries that you can run once the user logged in.
 
 In order to perform certain queries, most of the times you can use the [API](https://api.elrond.com/) provided by the Elrond team.
 
----
-
 Since the tokens have a lot of zeros, we have created this utility to transform the number to human readable format:
 
 ```ts
@@ -112,10 +223,7 @@ Below are some examples of how to call and decode the responses from the `api.el
 ```ts
 const API = "https://devnet-api.elrond.com";
 
-export const getTokenBalance = async (
-  address: string,
-  tokenIdentifier: string
-) => {
+export const getTokenBalance = async (address: string, tokenIdentifier: string) => {
   const url = `${API}/accounts/${address}/tokens/${tokenIdentifier}`;
 
   try {
@@ -196,7 +304,7 @@ export function getClaimRewardsTransaction(nonce: number) {
 }
 ```
 
-### Working example of actual call of `claimRewards` function from the SC.
+### Working example of an actual call of `claimRewards` function from the SC.
 
 ```ts
 import { TransactionWatcher, Account, Address } from "@elrondnetwork/erdjs";
