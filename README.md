@@ -1,5 +1,5 @@
 # Maiar integration documentation
-This is the official documentation presented by the Sense4FIT team for elrond developers who want to integrate with the Maiar application.
+This is the official documentation presented by the Sense4FIT team for **Elrond developers** who want to integrate with the Maiar application.
 
 # How to connect to Maiar and sign transactions in React-native
 
