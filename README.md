@@ -5,9 +5,9 @@ This is the official documentation presented by the Sense4FIT team for elrond de
 
 Currently all you need in order to make this work are the next libraries:
 
-- @walletconnect/client
-- @elrondnetwork/erdjs
-- @elrondnetwork/erdjs-network-providers
+- [@walletconnect/client](https://www.npmjs.com/package/@walletconnect/client)
+- [@elrondnetwork/erdjs](https://www.npmjs.com/package/@elrondnetwork/erdjs)
+- [@elrondnetwork/erdjs-network-providers](https://www.npmjs.com/package/@elrondnetwork/erdjs-network-providers)
 
 ## WalletConnectProvider
 
