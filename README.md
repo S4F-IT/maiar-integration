@@ -276,6 +276,7 @@ import {
   TransactionVersion,
 } from "@elrondnetwork/erdjs";
 
+// Make sure to update the string with your OWN Smart Contract address.
 export const REWARDS_SC = "<your_SC_address>";
 
 export const gasPriceModifier = "0.01";
@@ -328,12 +329,12 @@ transaction = await walletProvider.signTransaction(transaction);
 
 await networkProvider.sendTransaction(transaction);
 
-console.log(
-  `Transaction Hash = ${EXPLORER}/transactions/${transaction.getHash()}`
-);
+// This just shows the transaction hash which can be seen on the Elrond explorer.
+// Depending on the network used, you may update the EXPLORER link.
+console.log(`Transaction Hash = ${EXPLORER}/transactions/${transaction.getHash()}`);
 
 const watcher = new TransactionWatcher(networkProvider);
 await watcher.awaitCompleted(transaction);
 
-// Once the transaction completed, you can query the account for the updated balance.
+// Once the transaction completed, you can query the account for the updated balance...
 ```
